@@ -1,17 +1,7 @@
-use clap::Parser;
+mod args;
 mod serial_writer;
 
-#[derive(Parser)]
-struct Cli {
-    #[arg(short, long)]
-    count: usize,
-
-    #[arg(short, long)]
-    device: String,
-
-    #[arg(short, long)]
-    baudrate: u32,
-}
+use args::Cli;
 
 fn main() {
     let opts = Cli::parse();
