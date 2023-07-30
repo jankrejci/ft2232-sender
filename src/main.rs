@@ -4,7 +4,8 @@ mod serial_writer;
 use args::Cli;
 use clap::Parser;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let args = Cli::parse();
-    serial_writer::run(args);
+    serial_writer::run(args).await;
 }
