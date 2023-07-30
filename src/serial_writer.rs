@@ -1,3 +1,4 @@
+use crate::args::Cli;
 use packed_struct::prelude::*;
 use rand::Rng;
 use std::io::prelude::*;
@@ -14,8 +15,8 @@ pub struct MessageHeader {
     write: bool,
 }
 
-pub fn write_to_serial(device: &str, count: usize, baudrate: u32) {
-    let mut port = serialport::new(device, baudrate)
+pub fn write_to_serial(args: &Cli) {
+    let mut port = serialport::new(&args.device, args.baudrate)
         .timeout(Duration::from_secs(1))
         .open()
         .expect("Failed to open serial port");
@@ -23,7 +24,7 @@ pub fn write_to_serial(device: &str, count: usize, baudrate: u32) {
     let mut bytes_sent = 0;
 
     let start = Instant::now();
-    while bytes_sent < count {
+    while bytes_sent < args.count {
         let message = generate_message();
         bytes_sent += message.len();
         port.write_all(&message)
