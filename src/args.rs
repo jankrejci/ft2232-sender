@@ -1,13 +1,13 @@
 use clap::Parser;
 
 #[derive(Parser)]
-struct Cli {
+pub struct Cli {
     #[arg(short, long)]
-    count: usize,
+    pub count: usize,
 
     #[arg(short, long)]
-    device: String,
+    pub device: String,
 
     #[arg(short, long)]
-    baudrate: u32,
+    pub baudrate: u32,
 }

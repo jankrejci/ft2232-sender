@@ -2,6 +2,7 @@ mod args;
 mod serial_writer;
 
 use args::Cli;
+use clap::Parser;
 
 fn main() {
     let opts = Cli::parse();
