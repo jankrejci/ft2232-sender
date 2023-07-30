@@ -4,7 +4,7 @@ mod serial_writer;
 #[derive(Parser)]
 struct Cli {
     #[arg(short, long)]
-    file: String,
+    count: usize,
 
     #[arg(short, long)]
     device: String,
@@ -15,6 +15,5 @@ struct Cli {
 
 fn main() {
     let opts = Cli::parse();
-
-    serial_writer::write_to_serial(&opts.device, &opts.file, opts.baudrate);
+    serial_writer::write_to_serial(&opts.device, opts.count, opts.baudrate);
 }

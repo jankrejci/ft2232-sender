@@ -6,3 +6,5 @@ edition = "2021"
 [dependencies]
 serialport = "4.2.1"
 clap = { version = "4.3.19", features = ["derive"] }
+packed_struct = "0.10.1"
+rand = "0.8.5"
