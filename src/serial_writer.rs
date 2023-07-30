@@ -2,6 +2,7 @@ use crate::args::Cli;
 use packed_struct::prelude::*;
 use rand::Rng;
 use std::io::prelude::*;
+use std::thread;
 use std::time::{Duration, Instant};
 
 #[derive(PackedStruct)]
@@ -15,11 +16,13 @@ pub struct MessageHeader {
     write: bool,
 }
 
-pub fn run(args: &Cli) {
-    worker(&args.device, args.count, args.baudrate);
+pub fn run(cli: Cli) {
+    let worker = thread::spawn(move || worker(cli.device, cli.count, cli.baudrate));
+
+    worker.join().expect("BUG: Worker panicked");
 }
 
-pub fn worker(device: &str, count: usize, baudrate: u32) {
+pub fn worker(device: String, count: usize, baudrate: u32) {
     let mut port = serialport::new(device, baudrate)
         .timeout(Duration::from_secs(1))
         .open()

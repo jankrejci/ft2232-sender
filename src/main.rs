@@ -6,5 +6,5 @@ use clap::Parser;
 
 fn main() {
     let args = Cli::parse();
-    serial_writer::run(&args);
+    serial_writer::run(args);
 }
