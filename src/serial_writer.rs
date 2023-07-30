@@ -15,8 +15,12 @@ pub struct MessageHeader {
     write: bool,
 }
 
-pub fn write_to_serial(args: &Cli) {
-    let mut port = serialport::new(&args.device, args.baudrate)
+pub fn run(args: &Cli) {
+    worker(&args.device, args.count, args.baudrate);
+}
+
+pub fn worker(device: &str, count: usize, baudrate: u32) {
+    let mut port = serialport::new(device, baudrate)
         .timeout(Duration::from_secs(1))
         .open()
         .expect("Failed to open serial port");
@@ -24,7 +28,7 @@ pub fn write_to_serial(args: &Cli) {
     let mut bytes_sent = 0;
 
     let start = Instant::now();
-    while bytes_sent < args.count {
+    while bytes_sent < count {
         let message = generate_message();
         bytes_sent += message.len();
         port.write_all(&message)
