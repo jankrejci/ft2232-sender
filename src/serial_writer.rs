@@ -3,6 +3,7 @@ use packed_struct::prelude::*;
 use rand::Rng;
 use std::io::prelude::*;
 use std::time::{Duration, Instant};
+use tokio::sync::mpsc;
 
 #[derive(PackedStruct)]
 #[packed_struct(bit_numbering = "msb0")]
@@ -16,33 +17,46 @@ pub struct MessageHeader {
 }
 
 pub async fn run(cli: Cli) {
-    let worker = tokio::spawn(worker(cli.device, cli.count, cli.baudrate));
-    worker.await.expect("BUG: Worker failed");
-}
+    let (tx, mut rx) = mpsc::channel(100);
+    let start = Instant::now();
 
-pub async fn worker(device: String, count: usize, baudrate: u32) {
-    let mut port = tokio_serial::new(device, baudrate)
+    let message_generator = tokio::spawn(async move {
+        let mut bytes_sent = 0;
+        for _ in 0..100000 {
+            let message = generate_message();
+            bytes_sent += message.len();
+            tx.send(message)
+                .await
+                .expect("BUG: Failed to send message to the channel");
+        }
+        bytes_sent
+    });
+
+    let mut port = tokio_serial::new(cli.device, cli.baudrate)
         .timeout(Duration::from_secs(1))
         .open()
         .expect("Failed to open serial port");
 
-    let mut bytes_sent = 0;
+    let message_writer = tokio::spawn(async move {
+        while let Some(message) = rx.recv().await {
+            port.write_all(&message)
+                .expect("Failed to write to serial port");
+        }
+    });
 
-    let start = Instant::now();
-    while bytes_sent < count {
-        let message = generate_message();
-        bytes_sent += message.len();
-        port.write_all(&message)
-            .expect("Failed to write to serial port");
-    }
+    let bytes_sent = message_generator
+        .await
+        .expect("BUG: Message generator failed");
 
-    let duration = start.elapsed().as_micros() as f64 / 1_000_000.0;
+    message_writer.await.expect("Message writer failed");
+
     let size = bytes_sent as f64 / (1024.0 * 1024.0);
-    let raw_speed = size * 10.0 / duration;
+    let duration_s = start.elapsed().as_micros() as f64 / 1_000_000.0;
+    let raw_speed = bytes_sent as f64 * 10.0 / duration_s / 1_000_000.0;
 
     println!(
         "Sent {:.2} MB in {:.2} s, raw speed {:.6} Mb/s",
-        size, duration, raw_speed
+        size, duration_s, raw_speed
     );
 }
 
@@ -50,8 +64,7 @@ pub fn generate_message() -> Vec<u8> {
     let mut rng = rand::thread_rng();
 
     let address: u8 = rng.gen();
-    // let length: u8 = rng.gen_range(0..(u8::MAX / 2));
-    let length: u8 = u8::MAX / 2;
+    let length: u8 = rng.gen_range(1..(u8::MAX / 2));
     let message_header = MessageHeader {
         address,
         length,
