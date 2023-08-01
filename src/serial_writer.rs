@@ -22,7 +22,7 @@ pub async fn run(cli: Cli) {
 
     let message_generator = tokio::spawn(async move {
         let mut bytes_sent = 0;
-        for _ in 0..100000 {
+        while bytes_sent < cli.count {
             let message = generate_message();
             bytes_sent += message.len();
             tx.send(message)
@@ -50,13 +50,13 @@ pub async fn run(cli: Cli) {
 
     message_writer.await.expect("Message writer failed");
 
-    let size = bytes_sent as f64 / (1024.0 * 1024.0);
+    let size_mb = bytes_sent as f64 / (1_000_000.0);
     let duration_s = start.elapsed().as_micros() as f64 / 1_000_000.0;
-    let raw_speed = bytes_sent as f64 * 10.0 / duration_s / 1_000_000.0;
+    let raw_speed = size_mb * 10.0 / duration_s;
 
     println!(
         "Sent {:.2} MB in {:.2} s, raw speed {:.6} Mb/s",
-        size, duration_s, raw_speed
+        size_mb, duration_s, raw_speed
     );
 }
 
